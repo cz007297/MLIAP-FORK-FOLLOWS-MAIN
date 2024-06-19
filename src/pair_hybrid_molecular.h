@@ -13,43 +13,26 @@
 
 #ifdef PAIR_CLASS
 // clang-format off
-PairStyle(soft,PairSoft);
+PairStyle(hybrid/molecular,PairHybridMolecular);
+PairStyle(hybrid/molecular/omp,PairHybridMolecular);
 // clang-format on
 #else
 
-#ifndef LMP_PAIR_SOFT_H
-#define LMP_PAIR_SOFT_H
+#ifndef LMP_PAIR_HYBRID_MOLECULAR_H
+#define LMP_PAIR_HYBRID_MOLECULAR_H
 
-#include "pair.h"
+#include "pair_hybrid_overlay.h"
 
 namespace LAMMPS_NS {
 
-class PairSoft : public Pair {
-  friend class Pair;
-
+class PairHybridMolecular : public PairHybridOverlay {
  public:
-  PairSoft(class LAMMPS *);
-  ~PairSoft() override;
+  PairHybridMolecular(class LAMMPS *);
 
-  void compute(int, int) override;
-  void settings(int, char **) override;
-  void coeff(int, char **) override;
+  void init_style() override;
   double init_one(int, int) override;
-  void write_restart(FILE *) override;
-  void read_restart(FILE *) override;
-  void write_restart_settings(FILE *) override;
-  void read_restart_settings(FILE *) override;
-  void write_data(FILE *) override;
-  void write_data_all(FILE *) override;
+
   double single(int, int, int, int, double, double, double, double &) override;
-  void *extract(const char *, int &) override;
-
- protected:
-  double cut_global;
-  double **prefactor;
-  double **cut;
-
-  virtual void allocate();
 };
 
 }    // namespace LAMMPS_NS
