@@ -14,7 +14,22 @@
 # sm_80 is supported by every CUDA version from 11-13 and is thus
 # chosen as default
 
-default_arch="sm_80"
+if [ -z "$NVCC_WRAPPER_DEFAULT_ARCH" ]; then
+    if command -v nvidia-smi >/dev/null 2>&1; then
+        # Get compute capability from the first GPU
+        cc=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | head -n1 | tr -d '.')
+        if [ -n "$cc" ]; then
+            default_arch="sm_${cc}"
+        else
+            default_arch="sm_80"  # fallback
+        fi
+    else
+        default_arch="sm_80"      # fallback if nvidia-smi not found
+    fi
+else
+    default_arch="$NVCC_WRAPPER_DEFAULT_ARCH"
+fi
+
 
 #
 # The default C++ compiler.

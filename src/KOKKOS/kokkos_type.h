@@ -537,7 +537,8 @@ struct BinOp3DLAMMPS {
 };
 
 typedef int T_INT;
-
+typedef double E_FLOAT;
+typedef double F_FLOAT;
 // ------------------------------------------------------------------------
 
 // LAMMPS types
