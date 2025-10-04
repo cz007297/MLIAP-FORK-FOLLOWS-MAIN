@@ -147,13 +147,17 @@ void PairDispersionD3Kokkos<DeviceType>::sync_arrays_device()
 
   //d_c6ab_v  = t_kkfloat_5d(k_c6ab_v.template view<DeviceType>()); 
   d_c6ab_ra = t_kkfloat_5d_ra(d_c6ab_v);
-
-  
+  d_mxci_ra  = d_mxci_v;
+  d_r2r4_ra  = d_r2r4_v;
+  d_rcov_ra  = d_rcov_v;
+  d_r0ab_ra  = d_r0ab_v;
+  d_cutsq_ra = d_cutsq_v;
+  /* 
   typename AT::t_kkfloat_1d_randomread  d_mxci_ra;
   typename AT::t_kkfloat_1d_randomread  d_r2r4_ra;
   typename AT::t_kkfloat_1d_randomread  d_rcov_ra;
   typename AT::t_kkfloat_2d_randomread  d_r0ab_ra;
-  typename AT::t_kkfloat_2d_randomread  d_cutsq_ra;
+  typename AT::t_kkfloat_2d_randomread  d_cutsq_ra;*/
 }
 
 template<class DeviceType>
@@ -173,25 +177,28 @@ void PairDispersionD3Kokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   vflag = vflag_in;
   
   ev_init(eflag, vflag, 0);
+  // Ensure capacity BEFORE allocating per-atom arrays
+  const int req_nmax = atom->nmax;
+  if (req_nmax > nmax) nmax = req_nmax;
    
   // DECLARE SINGLE EV
   EV_FLOAT ev;
-  
+
   if (eflag_atom)
   {
-    if (k_eatom.extent(0) < nmax) 
+    if (k_eatom.extent(0) < req_nmax) 
     {
       memoryKK->destroy_kokkos(k_eatom, eatom);
-      memoryKK->create_kokkos(k_eatom, eatom, nmax, "pair:eatom");
+      memoryKK->create_kokkos(k_eatom, eatom, req_nmax, "pair:eatom");
     }
     d_eatom = k_eatom.view<DeviceType>();  
   }
   if (vflag_atom)
   {
-    if (k_vatom.extent(0) < nmax) 
+    if (k_vatom.extent(0) < req_nmax) 
     {
       memoryKK->destroy_kokkos(k_vatom, vatom);
-      memoryKK->create_kokkos(k_vatom, vatom, nmax, "pair:vatom");
+      memoryKK->create_kokkos(k_vatom, vatom, req_nmax, "pair:vatom");
     }
     d_vatom = k_vatom.view<DeviceType>();
   }
@@ -207,11 +214,9 @@ void PairDispersionD3Kokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   special_lj[3] = force->special_lj[3];
   
   // Ensure per-atom capacity first
-  const int req_nmax = atom->nmax;
-  if (!k_cn_v.span() || !k_dc6_v.span() || req_nmax > nmax) {
-    nmax = req_nmax;
-    memoryKK->grow_kokkos(k_cn_v,  cn,  nmax, "pair:cn");
-    memoryKK->grow_kokkos(k_dc6_v, dc6, nmax, "pair:dc6");
+  if (!k_cn_v.span() || !k_dc6_v.span() || req_nmax > nmax) { 
+    memoryKK->grow_kokkos(k_cn_v,  cn,  req_nmax, "pair:cn");
+    memoryKK->grow_kokkos(k_dc6_v, dc6, req_nmax, "pair:dc6");
   }
 
   d_cn_v  = k_cn_v.view<DeviceType>();
@@ -239,15 +244,15 @@ void PairDispersionD3Kokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     dup_cn    =  Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterDuplicated>(d_cn_v);
     dup_dc6   =  Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterDuplicated>(d_dc6_v);
     dup_f     = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterDuplicated>(f);
-    dup_eatom = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterDuplicated>(d_eatom);
-    dup_vatom = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterDuplicated>(d_vatom); 
+    if (eflag_atom) dup_eatom = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterDuplicated>(d_eatom);
+    if (vflag_atom) dup_vatom = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterDuplicated>(d_vatom);
   } else {
 
   ndup_cn    =  Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterNonDuplicated>(d_cn_v);
   ndup_dc6   =  Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterNonDuplicated>(d_dc6_v);
   ndup_f     =  Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterNonDuplicated>(f);
-  ndup_eatom =  Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterNonDuplicated>(d_eatom);
-  ndup_vatom =  Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterNonDuplicated>(d_vatom);
+  if (eflag_atom) ndup_eatom = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterNonDuplicated>(d_eatom);
+  if (vflag_atom) ndup_vatom = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterNonDuplicated>(d_vatom);
   }
 
   copymode = 1; 
