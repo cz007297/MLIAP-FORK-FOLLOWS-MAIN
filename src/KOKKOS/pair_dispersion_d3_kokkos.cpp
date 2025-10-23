@@ -182,7 +182,7 @@ void PairDispersionD3Kokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   if (req_nmax > nmax) nmax = req_nmax;
    
   // DECLARE SINGLE EV
-  EV_FLOAT ev;
+  EV_FLOAT ev{};
 
   if (eflag_atom)
   {
@@ -388,10 +388,9 @@ void PairDispersionD3Kokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   }
   if (vflag_global) for (int m=0; m<6; ++m) virial[m] += ev.v[m];
 
-
-  if (vflag_fdotr) {
-    pair_virial_fdotr_compute(this);
-  }
+  if constexpr (!std::is_same_v<DeviceType, LMPHostType>) {
+    atomKK->sync(Host, F_MASK);
+  } 
    
   if (eflag_atom) {
     if (need_dup) Kokkos::Experimental::contribute(d_eatom, dup_eatom);
@@ -404,11 +403,11 @@ void PairDispersionD3Kokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     k_vatom.template sync<LMPHostType>();
   }
 
+  if (vflag_fdotr) {
+    pair_virial_fdotr_compute(this);
+  }
+
   copymode = 0;
-  if constexpr (!std::is_same_v<DeviceType, LMPHostType>) {
-    atomKK->sync(Host, F_MASK);
-  } 
-  
   // Free allocated memory
   if (need_dup) {
     dup_cn         = {};
@@ -1123,7 +1122,7 @@ void PairDispersionD3Kokkos<DeviceType>::operator()(
       }
 
       if (EVFLAG) {
-        if (eflag_atom || vflag_either ) this->template ev_tally<NEIGHFLAG,NEWTON_PAIR>(ev, i, j, phi, fpair, dx, dy, dz);
+        this->template ev_tally<NEIGHFLAG,NEWTON_PAIR>(ev, i, j, phi, fpair, dx, dy, dz);
       }
     }
   }
@@ -1248,7 +1247,7 @@ void PairDispersionD3Kokkos<DeviceType>::operator()(
         if (eflag) {
           ev.evdwl += (((NEIGHFLAG==HALF || NEIGHFLAG==HALFTHREAD)&&(NEWTON_PAIR||(j<nlocal)))?1.0:0.5)*phi;
         }
-        if (eflag_atom || vflag_either ) this->template ev_tally<NEIGHFLAG,NEWTON_PAIR>(ev, i, j, phi, fpair, dx, dy, dz);
+        this->template ev_tally<NEIGHFLAG,NEWTON_PAIR>(ev, i, j, phi, fpair, dx, dy, dz);
       }
     }
   }
@@ -1360,7 +1359,7 @@ void PairDispersionD3Kokkos<DeviceType>::operator()(
       }
 
       if (EVFLAG) {
-        if (eflag_atom || vflag_either ) this->template ev_tally<NEIGHFLAG,NEWTON_PAIR>(ev, i, j, phi, fpair, dx, dy, dz);
+        this->template ev_tally<NEIGHFLAG,NEWTON_PAIR>(ev, i, j, phi, fpair, dx, dy, dz);
       }
     }
   }

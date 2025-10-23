@@ -157,7 +157,9 @@ class PairDispersionD3Kokkos : public PairDispersionD3, public KokkosBase
   protected:
     // non-view variables 
     bool initialised;
-    int need_dup, dampingCode;
+    //int need_dup, dampingCode;
+    int need_dup;
+    using PairDispersionD3::dampingCode;
     int communicationStage;
     int first;
     int nlocal, nall, inum, nmax, eflag, vflag;
