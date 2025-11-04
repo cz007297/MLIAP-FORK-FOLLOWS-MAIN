@@ -1424,6 +1424,18 @@ void Neighbor::morph_halffull()
     // only processing half lists
 
     if (!irq->half) continue;
+    
+    /*
+    if (irq->pair && (irq->kokkos_device || irq->kokkos_host)) 
+    {
+      auto *pair_half = static_cast<Pair *>(irq->requestor);
+      if (pair_half) 
+      {
+        const char *pstyle = force->pair_match_ptr(pair_half);
+        // Match both dispersion/d3 and any suffixed variants (/kk, /device, /host)
+        if (pstyle && utils::strmatch(pstyle, "^dispersion/d3")) continue;
+      }
+    } */
 
     // these lists are created other ways, no need for halffull
     // do want to process skip lists

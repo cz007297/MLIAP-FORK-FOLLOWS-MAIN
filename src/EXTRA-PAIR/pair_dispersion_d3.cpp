@@ -90,6 +90,7 @@ PairDispersionD3::PairDispersionD3(LAMMPS *lmp) :
 
 PairDispersionD3::~PairDispersionD3()
 {
+  if (copymode) return;
   if (allocated) {
     memory->destroy(setflag);
     memory->destroy(cutsq);

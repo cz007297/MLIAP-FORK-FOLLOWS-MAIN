@@ -158,7 +158,7 @@ class PairDispersionD3Kokkos : public PairDispersionD3, public KokkosBase
     // non-view variables 
     bool initialised;
     //int need_dup, dampingCode;
-    int need_dup;
+    int need_dup;  
     using PairDispersionD3::dampingCode;
     int communicationStage;
     int first;
@@ -172,13 +172,13 @@ class PairDispersionD3Kokkos : public PairDispersionD3, public KokkosBase
     // Kokkos views 
  
     typename AT::t_kkfloat_1d_3_lr x;
-    typename AT::t_kkacc_1d_3      f;
+    typename AT::t_kkfloat_1d_3    f;
     typename AT::t_int_1d          type;
   
-    DAT::ttransform_kkacc_1d   k_eatom;
-    DAT::ttransform_kkacc_1d_6 k_vatom;
-    typename AT::t_kkacc_1d    d_eatom;
-    typename AT::t_kkacc_1d_6  d_vatom;
+    DAT::ttransform_kkfloat_1d     k_eatom;
+    DAT::ttransform_kkfloat_1d_6   k_vatom;
+    typename AT::t_kkfloat_1d      d_eatom;
+    typename AT::t_kkfloat_1d_6    d_vatom;
   
     // neighbors views 
     typename AT::t_neighbors_2d d_neighbors; 
@@ -187,7 +187,7 @@ class PairDispersionD3Kokkos : public PairDispersionD3, public KokkosBase
  
     // Comm views 
     typename AT::t_int_1d d_sendlistV;
-    typename AT::t_double_1d_um bufV;
+    typename AT::t_kkfloat_1d bufV;
     
     
     template<typename DataType, typename Layout>
@@ -198,14 +198,14 @@ class PairDispersionD3Kokkos : public PairDispersionD3, public KokkosBase
     
     DupScatterView<KK_FLOAT*, typename DAT::t_kkfloat_1d::array_layout>              dup_cn;
     DupScatterView<KK_FLOAT*, typename DAT::t_kkfloat_1d::array_layout>              dup_dc6;
-    DupScatterView<KK_ACC_FLOAT*[3], typename DAT::t_kkacc_1d_3::array_layout>       dup_f;
-    DupScatterView<KK_ACC_FLOAT*, typename DAT::t_kkacc_1d::array_layout>            dup_eatom;
-    DupScatterView<KK_ACC_FLOAT*[6], typename DAT::t_kkacc_1d_6::array_layout>       dup_vatom; 
+    DupScatterView<KK_FLOAT*[3], typename DAT::t_kkfloat_1d_3::array_layout>       dup_f;
+    DupScatterView<KK_FLOAT*, typename DAT::t_kkfloat_1d::array_layout>            dup_eatom;
+    DupScatterView<KK_FLOAT*[6], typename DAT::t_kkfloat_1d_6::array_layout>       dup_vatom; 
     NonDupScatterView<KK_FLOAT*, typename DAT::t_kkfloat_1d::array_layout>           ndup_cn;
     NonDupScatterView<KK_FLOAT*, typename DAT::t_kkfloat_1d::array_layout>           ndup_dc6;
-    NonDupScatterView<KK_ACC_FLOAT*[3], typename DAT::t_kkacc_1d_3::array_layout>    ndup_f; 
-    NonDupScatterView<KK_ACC_FLOAT*, typename DAT::t_kkacc_1d::array_layout>         ndup_eatom;
-    NonDupScatterView<KK_ACC_FLOAT*[6], typename DAT::t_kkacc_1d_6::array_layout>    ndup_vatom;
+    NonDupScatterView<KK_FLOAT*[3], typename DAT::t_kkfloat_1d_3::array_layout>    ndup_f; 
+    NonDupScatterView<KK_FLOAT*, typename DAT::t_kkfloat_1d::array_layout>         ndup_eatom;
+    NonDupScatterView<KK_FLOAT*[6], typename DAT::t_kkfloat_1d_6::array_layout>    ndup_vatom;
 
     DAT::tdual_kkfloat_1d      k_cn_v;
     DAT::tdual_kkfloat_1d     k_dc6_v;

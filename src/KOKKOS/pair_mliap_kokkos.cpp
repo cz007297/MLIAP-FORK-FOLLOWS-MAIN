@@ -141,8 +141,15 @@ void PairMLIAPKokkos<DeviceType>::compute(int eflag, int vflag)
   }
 
   // calculate stress
+  // src/KOKKOS/pair_mliap_kokkos.cpp
+  // calculate stress
   if (vflag_fdotr) {
+    // virial_fdotr works on host-side x/f, so make sure the mirrors are current
+    atomKK->sync(Host, X_MASK | F_MASK);
     pair_virial_fdotr_compute(this);
+  } else {
+    // dumps/thermo still expect host forces when we skip virial_fdotr
+    atomKK->sync(Host, F_MASK);
   }
 }
 
