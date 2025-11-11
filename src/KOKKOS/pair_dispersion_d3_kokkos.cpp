@@ -201,19 +201,24 @@ void PairDispersionD3Kokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   if (eflag_atom)
   {
-    if (k_eatom.extent(0) < nmax) 
-    {
+    if ((int)k_eatom.h_view.extent(0) < nmax) {
       memoryKK->destroy_kokkos(k_eatom, eatom);
       memoryKK->create_kokkos(k_eatom, eatom, nmax, "pair:eatom");
+    } else {
+      Kokkos::deep_copy(k_eatom.template view<DeviceType>(),0);
+      k_eatom.modify<DeviceType>();
+      k_eatom.sync_host();
     }
     d_eatom = k_eatom.view<DeviceType>();  
   }
-  if (vflag_atom)
-  {
-    if (k_vatom.extent(0) < nmax) 
-    {
+  if (vflag_atom) {
+    if ((int)k_vatom.h_view.extent(0) < nmax) {
       memoryKK->destroy_kokkos(k_vatom, vatom);
-      memoryKK->create_kokkos(k_vatom, vatom, nmax, "pair:vatom");
+      memoryKK->create_kokkos(k_vatom, vatom, nmax,"pair:vatom");
+    } else {
+      Kokkos::deep_copy(k_vatom.template view<DeviceType>(),0);
+      k_vatom.modify<DeviceType>();
+      k_vatom.sync_host();
     }
     d_vatom = k_vatom.view<DeviceType>();
   }
@@ -404,12 +409,19 @@ void PairDispersionD3Kokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   }
   if (vflag_global) for (int m=0; m<6; ++m) virial[m] += ev.v[m];
 
+  if (evflag) {
+    atomKK->modified(execution_space, F_MASK | ENERGY_MASK | VIRIAL_MASK);
+    atomKK->sync(execution_space, F_MASK | ENERGY_MASK | VIRIAL_MASK);
+  } else {
+    atomKK->modified(execution_space, F_MASK);
+    atomKK->sync(execution_space,F_MASK);
+  }
+   
+  
   if (vflag_fdotr) {
-    if constexpr (!std::is_same_v<DeviceType, LMPHostType>) {
-      atomKK->sync(Host, X_MASK | F_MASK);
-    }
-    pair_virial_fdotr_compute(this);
-    } else if constexpr (!std::is_same_v<DeviceType, LMPHostType>) {
+    atomKK->sync(Host, X_MASK | F_MASK);
+    pair_virial_fdotr_compute(this);      
+  } else {
     atomKK->sync(Host, F_MASK);
   } 
    
